@@ -1,0 +1,123 @@
+
+using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+using System;
+
+public class DinputCarController : CarController
+{
+
+
+    CarCameras carCameras;
+    private WheelMenu wheelMenu;
+
+    private static bool shiftUpOn = false;
+    private static bool shiftDownOn = false;
+
+
+    void Awake()
+    {
+        this.smoothInput = false;
+        wheelMenu = Camera.main.GetComponent<WheelMenu>();
+        carCameras = Camera.main.GetComponent<CarCameras>();
+
+    }
+
+    void OnDestroy()
+    {
+    }
+
+
+    protected override void GetInput(out float throttleInput,
+                                    out float brakeInput,
+                                    out float steerInput,
+                                    out float handbrakeInput,
+                                    out float clutchInput,
+                                    out bool startEngineInput,
+                                    out int targetGear)
+    {
+
+        // Don't do anything if we are not playing
+        if (!Application.isPlaying || carCameras.target.gameObject != this.gameObject)
+        {
+            throttleInput = 0f;
+            brakeInput = 0f;
+            handbrakeInput = 0f;
+            clutchInput = 0f;
+            startEngineInput = false;
+            targetGear = 0;
+            steerInput = 0f;
+        }
+        else
+        {
+
+            wheelMenu.dinput.GetInput();
+
+            throttleInput = wheelMenu.dinput.GetThrottle();
+            brakeInput = wheelMenu.dinput.GetBrake();
+            steerInput = GetSteer();
+            clutchInput = GetClutch(true);
+            handbrakeInput = wheelMenu.dinput.GetHandbrake();
+            startEngineInput = wheelMenu.dinput.GetStartEngine();
+
+            // Gear shift
+            targetGear = GetGear();
+
+            shiftUpOn = wheelMenu.dinput.ShiftUp();
+            shiftDownOn = wheelMenu.dinput.ShiftDown();
+        }
+    }
+
+    private float GetSteer()
+    {
+        // Sensitivity is a logistics growth curve (S shaped curve) trends between 0.95f to 0. the 0.05f is a constant to ensure we always have some steering 
+        float sensitivity = (.95f / (1 + 0.02f * Mathf.Exp(0.025f * veloKmh))) + 0.05f;
+        return wheelMenu.dinput.GetSteer(sensitivity);
+    }
+
+    public float GetClutch(bool checkAuto)
+    {
+
+        if (checkAuto && drivetrain.automatic) return 0;
+        return wheelMenu.dinput.GetClutch();
+    }
+
+
+    public int GetGear()
+    {
+
+        int gearInput = 1;
+
+        if (drivetrain.automatic)
+        {
+            gearInput = drivetrain.gear;
+            if (!shiftUpOn && wheelMenu.dinput.ShiftUp())
+            {
+                ++gearInput;
+            }
+            if (!shiftDownOn && wheelMenu.dinput.ShiftDown())
+            {
+                --gearInput;
+            }
+        }
+        else if (drivetrain.shifter)
+        {
+            gearInput = wheelMenu.dinput.GetManualGear() + 1;
+        }
+        else
+        {
+            gearInput = drivetrain.gear;
+            if (!shiftUpOn && wheelMenu.dinput.ShiftUp())
+            {
+                ++gearInput;
+            }
+            if (!shiftDownOn && wheelMenu.dinput.ShiftDown())
+            {
+                --gearInput;
+            }
+        }
+
+        return gearInput;
+    }
+
+}

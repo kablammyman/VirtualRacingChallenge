@@ -1,0 +1,78 @@
+void  CalculateEnginePower ( Vector3 relativeVelocity  )
+	{	
+		
+
+		/*engineRPM = getEngineRPM(relativeVelocity.z, currentGear); //metersToMph = 2.23693629f;
+		if(throttle > 0)
+		{
+			engineTorque=(HP_CONSTANT * maxHorsepower) / engineRPM;
+			//engineTorque *= (throttle *100);
+			
+			//float engineTorque = (CalcEngineTorque() + Mathf.Abs(engineFrictionTorque)) * throttle;
+			/*float engineAngularAcceleration = engineRPM;  //(engineTorque-engineFrictionTorque) / engineInertia;
+			engineAngularVelo += engineAngularAcceleration * Time.deltaTime;
+			
+			engineAngularVelo = averageAngularVelo * gearRatio[currentGear];
+			engineRPM = engineAngularVelo * (60.0f/(2*Mathf.PI));
+			
+			currentEnginePower = (engineRPM * engineTorque)/HP_CONSTANT;
+		}
+		else
+		{
+			//engineRPM = getEngineRPM(relativeVelocity.z, currentGear); //metersToMph = 2.23693629f;
+			if(engineRPM < 750)
+				engineRPM = 750;
+		}*/
+		
+		print("engineRPM: " + engineRPM + " engineTorque: " + engineTorque + " currentEnginePower: " + currentEnginePower);
+		/*if(engineRPM < revLimit)
+		{
+			currentEnginePower = (throttle * 100) * gearRatio[currentGear];
+		}
+		else if(engineRPM > revLimit)
+		{
+			currentEnginePower = (throttle * 100) * gearRatio[currentGear];
+			currentEnginePower -= (gearRatio[currentGear]*2);
+		}*/
+
+	}
+	
+void  ApplyEnginePower ( bool canDrive , Vector3 relativeVelocity  )
+	{
+		if(canDrive)
+		{
+			float throttleForce = 0;
+			float brakeForce = 0;
+			
+			if(controls.brakeAsReverse)
+			{
+				if (!handbrake)
+				{
+					//we are moving backward and stepping on gas
+					
+					if (!HaveTheSameSign(relativeVelocity.z, throttle))
+						throttleForce = throttle * -brakeValue * rigidbody.mass;
+					
+					else //we are moving forward and stepping on gas
+						throttleForce = throttle * currentEnginePower * rigidbody.mass;
+				}
+				brakeForce = brake * brakeValue * rigidbody.mass;
+			}
+			else
+			{
+				if (!handbrake)
+				{
+					//we are moving backward and stepping on brake
+					throttleForce = throttle * currentEnginePower * rigidbody.mass;	
+				}
+				if(relativeVelocity.z > 0)
+					brakeForce = brake * brakeValue * rigidbody.mass;
+				else if(relativeVelocity.z < 0)	
+					brakeForce = brake * -brakeValue * rigidbody.mass;
+			}
+			//print("throttle = " + throttle + " brake " + brake);
+			//print("throttleForce = " + throttleForce + " brakeForce " + brakeForce);
+			
+			rigidbody.AddForce(transform.forward * Time.deltaTime * (throttleForce + brakeForce));
+		}
+	}
